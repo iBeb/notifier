@@ -1,0 +1,14 @@
+# Go
+/bin/
+/dist/
+/coverage.out
+
+# Binaries
+notify
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
