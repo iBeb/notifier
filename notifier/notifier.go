@@ -1,8 +1,12 @@
 package notifier
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"net"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -13,9 +17,10 @@ var (
 )
 
 type Result struct {
-	Message string
-	Err     error
-	At      time.Time
+	Message    string
+	Err        error
+	StatusCode int
+	At         time.Time
 }
 
 type job struct {
@@ -26,6 +31,8 @@ type job struct {
 
 // Client implements an asynchronous notification sender
 type Client struct {
+	url    string
+	client *http.Client
 	queue  chan job
 	wg     sync.WaitGroup
 	mu     sync.Mutex
@@ -34,7 +41,7 @@ type Client struct {
 
 // New creates a notifier client with a bounded queue
 // and a fixed number of workers
-func New(workers, queueSize int) *Client {
+func New(url string, workers, queueSize int) *Client {
 	if workers <= 0 {
 		workers = 8
 	}
@@ -42,8 +49,30 @@ func New(workers, queueSize int) *Client {
 		queueSize = 1024
 	}
 
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   5 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		MaxIdleConns:          256,
+		MaxIdleConnsPerHost:   64,
+		MaxConnsPerHost:       workers, // cap concurrency at transport level too
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		ForceAttemptHTTP2:     true,
+	}
+
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   10 * time.Second,
+	}
+
 	c := &Client{
-		queue: make(chan job, queueSize),
+		url:    url,
+		client: httpClient,
+		queue:  make(chan job, queueSize),
 	}
 
 	for i := 0; i < workers; i++ {
@@ -104,8 +133,31 @@ func (c *Client) Close(ctx context.Context) error {
 func (c *Client) worker() {
 	defer c.wg.Done()
 
-	// Acknowledges messages but no HTTP delivery
 	for j := range c.queue {
-		j.done <- Result{Message: j.message, At: time.Now()}
+		res := Result{Message: j.message, At: time.Now()}
+
+		req, err := http.NewRequestWithContext(j.ctx, http.MethodPost, c.url, bytes.NewBufferString(j.message))
+		if err != nil {
+			res.Err = err
+			j.done <- res
+			continue
+		}
+		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+
+		resp, err := c.client.Do(req)
+		if err != nil {
+			res.Err = err
+			j.done <- res
+			continue
+		}
+
+		_ = resp.Body.Close()
+
+		res.StatusCode = resp.StatusCode
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			res.Err = fmt.Errorf("non-2xx response: %d", resp.StatusCode)
+		}
+
+		j.done <- res
 	}
 }
