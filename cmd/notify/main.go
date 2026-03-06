@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/iBeb/notifier/notifier"
 )
+
+var resultWG sync.WaitGroup
+var mu sync.Mutex
 
 func main() {
 	url := flag.String("url", "", "notification URL")
@@ -62,9 +66,16 @@ loop:
 				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 				resCh := n.Notify(ctx, msg)
 
+				resultWG.Add(1)
 				go func() {
+					defer resultWG.Done()
 					defer cancel()
+
 					res := <-resCh
+
+					mu.Lock()
+					defer mu.Unlock()
+
 					if res.Err != nil {
 						failCount++
 						fmt.Fprintf(os.Stderr, "FAIL: %q: %v\n", res.Message, res.Err)
@@ -82,6 +93,7 @@ loop:
 	closeCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = n.Close(closeCtx)
+	resultWG.Wait()
 
 	fmt.Fprintf(os.Stderr, "sent=%d ok=%d fail=%d\n", sent, okCount, failCount)
 }
