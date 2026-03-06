@@ -23,10 +23,17 @@ func main() {
 	workers := flag.Int("workers", 8, "worker concurrency")
 	queue := flag.Int("queue", 1024, "queue size")
 	timeout := flag.Duration("timeout", 10*time.Second, "request timeout")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "usage: notify --url=URL [flags]\n\n"
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	if *url == "" {
 		fmt.Fprintln(os.Stderr, "--url is required")
+		flag.Usage()
 		os.Exit(2)
 	}
 

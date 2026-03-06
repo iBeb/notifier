@@ -2,15 +2,23 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
 func main() {
 	status := flag.Int("status", http.StatusNoContent, "response status code")
 	delay := flag.Duration("delay", 0, "response delay")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "usage: testserver [flags]\n\n")
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 	
 	http.HandleFunc("/notify", func(w http.ResponseWriter, r *http.Request) {
