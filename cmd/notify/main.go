@@ -30,7 +30,11 @@ func main() {
 		os.Exit(2)
 	}
 
-	n := notifier.New(*url, *workers, *queue, *timeout)
+	n := notifier.New(*url, notifier.Options{
+		Workers:        *workers,
+		QueueSize:      *queue,
+		RequestTimeout: *timeout,
+	})
 
 	lines := make(chan string, 1024)
 	go func() {
