@@ -41,14 +41,7 @@ type Client struct {
 
 // New creates a notifier client with a bounded queue
 // and a fixed number of workers
-func New(url string, workers, queueSize int, timeout time.Duration) *Client {
-	if workers < 0 {
-		workers = 8
-	}
-	if queueSize <= 0 {
-		queueSize = 1024
-	}
-
+func New(url string, opts Options) *Client {
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -57,7 +50,7 @@ func New(url string, workers, queueSize int, timeout time.Duration) *Client {
 		}).DialContext,
 		MaxIdleConns:          256,
 		MaxIdleConnsPerHost:   64,
-		MaxConnsPerHost:       workers, // cap concurrency at transport level too
+		MaxConnsPerHost:       opts.Workers, // cap concurrency at transport level too
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
@@ -66,16 +59,16 @@ func New(url string, workers, queueSize int, timeout time.Duration) *Client {
 
 	httpClient := &http.Client{
 		Transport: transport,
-		Timeout:   timeout,
+		Timeout:   opts.RequestTimeout,
 	}
 
 	c := &Client{
 		url:    url,
 		client: httpClient,
-		queue:  make(chan job, queueSize),
+		queue:  make(chan job, opts.QueueSize),
 	}
 
-	for i := 0; i < workers; i++ {
+	for i := 0; i < opts.Workers; i++ {
 		c.wg.Add(1)
 		go c.worker()
 	}
