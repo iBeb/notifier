@@ -69,12 +69,21 @@ go test ./...
 
 ## Local Test Server
 
-For manual end-to-end testing a basic HTTP server is provided under
-`cmd/testserver`.
+For manual end-to-end testing a basic HTTP server is provided under `cmd/testserver`.
 
-It accepts `POST /notify` and logs the request body.
+It accepts `POST /notify`, logs the request body, and returns a configurable 
+status code. The test server can delay responses to simulate slower services
+and exercise timeout handling.
 
 ### Run
 
 ```bash
 go run ./cmd/testserver
+```
+
+### Flags
+
+| Flag       | Description                 | Default |
+|------------| --------------------------- |---------|
+| `--status` | Response status code        | `204`   |
+| `--delay`  | Artificial response delay   | `0s`    |
