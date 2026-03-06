@@ -15,7 +15,7 @@ func TestNotify_ReturnsErrClosedAfterClose(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 1, 1)
+	c := New(srv.URL, 1, 1, 10*time.Second)
 
 	ctxClose, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -36,7 +36,7 @@ func TestNotify_FailsFastWhenQueueIsFull(t *testing.T) {
 	defer srv.Close()
 
 	// 0 workers so nothing drains the queue, queue size 1.
-	c := New(srv.URL, 0, 1)
+	c := New(srv.URL, 0, 1, 10*time.Second)
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -57,7 +57,7 @@ func TestNotify_IsNonBlocking(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 0, 1) // no workers, but Notify must still return immediately
+	c := New(srv.URL, 0, 1, 10*time.Second) // no workers, but Notify must still return immediately
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -79,7 +79,7 @@ func TestNotify_AcknowledgesMessage(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 1, 10)
+	c := New(srv.URL, 1, 10, 10*time.Second)
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -113,7 +113,7 @@ func TestWorker_SendsPOSTWithBodyAndContentType(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 1, 10)
+	c := New(srv.URL, 1, 10, 10*time.Second)
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
@@ -144,7 +144,7 @@ func TestWorker_Non2xxReturnsError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(srv.URL, 1, 10)
+	c := New(srv.URL, 1, 10, 10*time.Second)
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
