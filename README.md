@@ -40,6 +40,12 @@ go build ./cmd/notify
 echo "hello world" | ./notify --url http://localhost:8080/notify
 ```
 
+You can display the available options with:
+
+```bash
+notify --help
+```
+
 ### Flags
 
 | Flag         | Description                 | Default  |
@@ -79,6 +85,12 @@ and exercise timeout handling.
 
 ```bash
 go run ./cmd/testserver
+```
+
+You can display the available options with:
+
+```bash
+go run ./cmd/testserver --help
 ```
 
 ### Flags
