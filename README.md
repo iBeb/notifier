@@ -10,6 +10,8 @@ A small CLI (`notify`) is provided to demonstrate the library. It
 reads messages from `stdin` and sends them to a configured URL at a
 configurable interval.
 
+A basic HTTP server is provided to exercise the library and CLI.
+
 ---
 
 ## Features
@@ -63,3 +65,16 @@ Run all tests with:
 ```bash
 go test ./...
 ```
+---
+
+## Local Test Server
+
+For manual end-to-end testing a basic HTTP server is provided under
+`cmd/testserver`.
+
+It accepts `POST /notify` and logs the request body.
+
+### Run
+
+```bash
+go run ./cmd/testserver
