@@ -99,3 +99,13 @@ go run ./cmd/testserver --help
 |------------| --------------------------- |---------|
 | `--status` | Response status code        | `204`   |
 | `--delay`  | Artificial response delay   | `0s`    |
+
+---
+
+## Docker
+
+Build the CLI image:
+
+```bash
+docker build -t notifier .
+```
