@@ -87,10 +87,9 @@ func (c *Client) Notify(ctx context.Context, message string) <-chan Result {
 	done := make(chan Result, 1)
 
 	c.mu.Lock()
-	closed := c.closed
-	c.mu.Unlock()
+	defer c.mu.Unlock()
 
-	if closed {
+	if c.closed {
 		done <- Result{Message: message, Err: ErrClosed, At: time.Now()}
 		return done
 	}
