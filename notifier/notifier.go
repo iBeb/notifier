@@ -41,7 +41,7 @@ type Client struct {
 
 // New creates a notifier client with a bounded queue
 // and a fixed number of workers
-func New(url string, workers, queueSize int) *Client {
+func New(url string, workers, queueSize int, timeout time.Duration) *Client {
 	if workers <= 0 {
 		workers = 8
 	}
@@ -66,7 +66,7 @@ func New(url string, workers, queueSize int) *Client {
 
 	httpClient := &http.Client{
 		Transport: transport,
-		Timeout:   10 * time.Second,
+		Timeout:   timeout,
 	}
 
 	c := &Client{
