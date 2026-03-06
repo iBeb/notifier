@@ -42,6 +42,9 @@ type Client struct {
 // New creates a notifier client with a bounded queue
 // and a fixed number of workers
 func New(url string, opts Options) *Client {
+    // Apply default values if needed
+    opts = opts.withDefaults()
+
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
